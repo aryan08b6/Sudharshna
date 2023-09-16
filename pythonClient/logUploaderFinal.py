@@ -31,7 +31,7 @@ def getLog(log_type, timeRange):
         event = win32evtlog.EvtNext(query_handle, 1, 1, 0)
         if event is None:
             break
-        data = {"EventID": event.EventID, "EventMessage": event.Message, "EventType": event.EventType, "EventTime": event.TimeGenerated}
+        data = {"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID, "EventID": event.EventID, "EventMessage": event.Message, "EventType": event.EventType, "EventTime": event.TimeGenerated}
         events.append(data)
 
     win32evtlog.EvtClose(event_log_handle)
@@ -59,7 +59,7 @@ while True:
         setLogs = getLog(log="Setup", timeRange=tRange)
         print("Forwarded Events Logs")
         forLogs = getLog(log="Forwarded Events", timeRange=tRange)
-        jsonData = json.dumps({"Application": json.dumps(appLogs), "Security": json.dumps(secLogs), "Setup": json.dumps(setLogs), "System": json.dumps(sysLogs), "Forwarded Events": json.dumps(forLogs)})
+        jsonData = {"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID, "Application": json.dumps(appLogs), "Security": json.dumps(secLogs), "Setup": json.dumps(setLogs), "System": json.dumps(sysLogs), "ForwardedEvents": json.dumps(forLogs)}
         requests.post(serverURL + "/logPush", json=jsonData)
         print("Updating The LastUp")
         requests.post(url=serverURL + "/timeUpdate", json={"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID, "Time": json.dumps(datetime.now())})
