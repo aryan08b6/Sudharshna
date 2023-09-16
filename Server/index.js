@@ -1,35 +1,66 @@
-import express from "express"
-import mongoose from "mongoose";
+const {MongoClient} = require('mongodb');
+const express = require('express');
 
-const app = express();
+const app = express()
+const url = 'mongodb://127.0.0.1:27017';
+const client = new MongoClient(url)
+const dbName = 'logs';
+
+let db;
+async function main(){
+    await client.connect();
+    console.log("Connected  Succesfully")
+    db = client.db(dbName)
+}
+
+main();
 
 app.use(express.json())
 
-mongoose.connect("mongodb://127.0.0.1:27017/", {
-    dbName: "Logs",
-}).then(()=>console.log("Connected"));
-
-const schema = new mongoose.Schema({
-    eventID: String,
-    event_time: String,
-    event_level: String,
-    event_category: String,
-    event_data: String,
-    CompName: String,
-    ReservedFlags: String
-});
-const appCollection = mongoose.model("Application_Logs", schema);
-
-app.post("/applogs", async (req,res) =>{
-    console.log("receiving")
-    await appCollection.create(req.body);
-    res.status(200);
-});
-
-app.get("/", (req, res) => {
-    res.end("<h1>This Site is Working I Guess</h1>")
-});
-
 app.listen(5000, ()=>{
-    console.log("Connected");
+    console.log("Server Running");
 })
+
+app.get('/', (req, res)=>{
+    res.end("<a href='/page1'>Added Logs</a> <a href=/page2>Anomalies</a>")
+})
+
+app.get('/page1', (req, res)=>{
+    res.end("Karta Hun Isse Abhi")
+})
+
+app.get('/page2', (req, res)=>{
+    res.end("Karta Hun Isse Abhi")
+})
+
+app.get('/timeGap', async (req, res) => {
+    console.log("Received Request")
+    const locationId = req.query.LOCATIONID;
+    const collection = db.collection('Gaps')
+    const findResult = await collection.find({gapType:"logUpdateGap", locationId:{ $eq: locationId }}).toArray();
+    const timeGap = findResult.gap;
+    console.log(findResult)
+  
+    res.json(1);
+  });
+
+app.post('/logPush', async (req, res) => {
+    const jsonData = req.body;
+    res.sendStatus(200);
+  });
+
+app.post('/timeUpdate', async (req, res) => {
+    const jsonData = req.body;
+    res.sendStatus(200);
+  });
+
+app.get('/time', async (req, res) => {
+    const param = req.query.PARAM;
+    const locationId = req.query.LOCATIONID;
+    const systemId = req.query.SYSTEMID;
+    const collection = db.collection('UpdateTimes')
+    res.end();
+  });
+
+  
+

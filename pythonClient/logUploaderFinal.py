@@ -4,6 +4,8 @@ from time import sleep
 import win32evtlog
 import json
 
+serverURL = "http://localhost:5000"
+
 
 def getSysId():
     return 1
@@ -11,8 +13,11 @@ def getSysId():
 def getLocalID():
     return 1
 
+SYSTEMID = getSysId()
+LOCATIONID = getLocalID()
+
 def getTimeThreshold():
-    return int(requests.get(url=serverURL+"/params", params= {"PARAM": "TimeGap", "LOCATIONID": LOCATIONID}).json())
+    return int(requests.get(url=serverURL+"/timeGap", params= {"LOCATIONID": LOCATIONID}).json())
 
 
 def getLog(log_type, timeRange):
@@ -26,15 +31,13 @@ def getLog(log_type, timeRange):
         event = win32evtlog.EvtNext(query_handle, 1, 1, 0)
         if event is None:
             break
-        events.append(event)
+        data = {"EventID": event.EventID, "EventMessage": event.Message, "EventType": event.EventType, "EventTime": event.TimeGenerated}
+        events.append(data)
 
     win32evtlog.EvtClose(event_log_handle)
     return events
 
 timeGap = getTimeThreshold()
-SYSTEMID = getSysId()
-LOCATIONID = getLocalID
-serverURL = ""
 
 schedule = requests.get(url=serverURL+"/time", params= {"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID}).json()
 lastUpdate = json.loads(schedule["LastUp"])
@@ -56,13 +59,14 @@ while True:
         setLogs = getLog(log="Setup", timeRange=tRange)
         print("Forwarded Events Logs")
         forLogs = getLog(log="Forwarded Events", timeRange=tRange)
-        jsonData = json.dumps({"Application": appLogs, "Security": secLogs, "Setup": setLogs, "System": sysLogs, "Forwarded Events": forLogs})
+        jsonData = json.dumps({"Application": json.dumps(appLogs), "Security": json.dumps(secLogs), "Setup": json.dumps(setLogs), "System": json.dumps(sysLogs), "Forwarded Events": json.dumps(forLogs)})
         requests.post(serverURL + "/logPush", json=jsonData)
         print("Updating The LastUp")
-        requests.post(url=serverURL + "/timeUpdate", json=json.dumps({"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID, "Time": datetime.now()}))
+        requests.post(url=serverURL + "/timeUpdate", json={"SYSTEMID": SYSTEMID, "LOCATIONID": LOCATIONID, "Time": json.dumps(datetime.now())})
         
     else:
         sleepSecs = dayGap.total_seconds() - timeDiff.total_seconds()
         print("Sleeping")
         sleep(sleepSecs)
+
 
