@@ -7,7 +7,7 @@ app.use(express.json())
 
 mongoose.connect("mongodb://127.0.0.1:27017/", {
     dbName: "Logs",
-}).then(()=>console.log("Connected")).catch(console.log("Error"));
+}).then(()=>console.log("Connected"));
 
 const schema = new mongoose.Schema({
     eventID: String,
